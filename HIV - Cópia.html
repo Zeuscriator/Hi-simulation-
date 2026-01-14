@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador do Sistema Imunológico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #4fc3f7;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #81d4fa;
+            font-size: 1.2em;
+        }
+
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        #canvas-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #4fc3f7;
+        }
+
+        canvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #4fc3f7;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: #4fc3f7;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #29b6f6, #0288d1);
+            transform: translateY(-2px);
+        }
+
+        .pathogen-btn {
+            background: linear-gradient(45deg, #ff5252, #d32f2f);
+        }
+
+        .pathogen-btn:hover {
+            background: linear-gradient(45deg, #d32f2f, #b71c1c);
+        }
+
+        .hiv-btn {
+            background: linear-gradient(45deg, #8e24aa, #6a1b9a);
+        }
+
+        .hiv-btn:hover {
+            background: linear-gradient(45deg, #6a1b9a, #4a148c);
+        }
+
+        .vaccine-btn {
+            background: linear-gradient(45deg, #66bb6a, #4caf50);
+        }
+
+        .vaccine-btn:hover {
+            background: linear-gradient(45deg, #4caf50, #388e3c);
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #4fc3f7;
+            margin-top: 20px;
+        }
+
+        .cell-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .cell-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+
+        .vaccine-status {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .vaccine-active {
+            color: #66bb6a;
+            font-weight: bold;
+        }
+
+        .vaccine-inactive {
+            color: #ff9800;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            height: 150px;
+            overflow-y: auto;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #4fc3f7;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ Simulador do Sistema Imunológico</h1>
+            <p class="subtitle">Visualize como seu organismo se defende contra patógenos!</p>
+        </header>
+
+        <div class="simulation-area">
+            <div id="canvas-container">
+                <canvas id="simulationCanvas" width="800" height="500"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <h3>🔧 Controles</h3>
+                    <button onclick="startSimulation()">▶️ Iniciar Simulação</button>
+                    <button onclick="resetSimulation()">🔄 Reiniciar</button>
+                    <button onclick="pauseSimulation()">⏸️ Pausar</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>🦠 Adicionar Patógenos</h3>
+                    <button class="pathogen-btn" onclick="addVirus()">➕ Vírus</button>
+                    <button class="pathogen-btn" onclick="addBacteria()">➕ Bactéria</button>
+                    <button class="pathogen-btn" onclick="addFungus()">➕ Fungo</button>
+                    <button class="hiv-btn" onclick="addHIV()">➕ Vírus HIV</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>⚡ Reforçar Defesas</h3>
+                    <button onclick="addMacrophage()">➕ Macrófago</button>
+                    <button onclick="addTCell()">➕ Linfócito T</button>
+                    <button onclick="addBCell()">➕ Linfócito B</button>
+                    <button onclick="addAntibody()">➕ Anticorpos</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>💉 Vacina contra HIV</h3>
+                    <button class="vaccine-btn" onclick="administerHIVVaccine()">💉 Aplicar Vacina</button>
+                    <div class="vaccine-status" id="vaccineStatus">
+                        Status: <span class="vaccine-inactive">Não vacinado</span>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div>🦠 Patógenos</div>
+                        <div class="stat-value" id="pathogenCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>🛡️ Células de Defesa</div>
+                        <div class="stat-value" id="defenseCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>❤️ Saúde</div>
+                        <div class="stat-value" id="health">100%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div>💉 Imunidade</div>
+                        <div class="stat-value" id="immunityLevel">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>🔍 Legenda e Informações</h3>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #ff5252;"></div>
+                <span>Vírus - Invadem células saudáveis</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #ff9800;"></div>
+                <span>Bactérias - Multiplicam-se rapidamente</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #9c27b0;"></div>
+                <span>Fungos - Liberam toxinas</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #8e24aa;"></div>
+                <span>HIV - Ataca linfócitos T (sistema imunológico)</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #4caf50;"></div>
+                <span>Macrófagos - Fagocitam patógenos</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #2196f3;"></div>
+                <span>Linfócitos T - Coordenam ataque</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #ffeb3b;"></div>
+                <span>Linfócitos B - Produzem anticorpos</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #00bcd4;"></div>
+                <span>Anticorpos - Neutralizam patógenos</span>
+            </div>
+            <div class="cell-info">
+                <div class="cell-color" style="background: #66bb6a;"></div>
+                <span>Anticorpos Anti-HIV - Neutralizam especificamente o HIV</span>
+            </div>
+
+            <h3 style="margin-top: 20px;">📊 Log de Eventos</h3>
+            <div class="log" id="eventLog">
+                <div class="log-entry">Sistema imunológico inicializado. Aguardando patógenos...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Simulation {
+            constructor() {
+                this.canvas = document.getElementById('simulationCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.cells = [];
+                this.antibodies = [];
+                this.specializedAntibodies = [];
+                this.running = false;
+                this.health = 100;
+                this.hivVaccineActive = false;
+                this.immunityLevel = 0;
+                this.vaccineCooldown = 0;
+                this.init();
+            }
+
+            init() {
+                // Adiciona algumas células de defesa iniciais
+                this.addCell('macrophage', 100, 100);
+                this.addCell('macrophage', 700, 400);
+                this.addCell('tcell', 200, 300);
+                this.addCell('bcell', 600, 200);
+                this.updateStats();
+                this.updateVaccineStatus();
+            }
+
+            addCell(type, x, y) {
+                const cell = {
+                    type: type,
+                    x: x || Math.random() * this.canvas.width,
+                    y: y || Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    size: this.getSize(type),
+                    color: this.getColor(type),
+                    health: 100,
+                    attack: this.getAttack(type),
+                    cooldown: 0,
+                    infected: false,
+                    vaccinated: this.hivVaccineActive && type === 'tcell' // Células T novas já nascem protegidas
+                };
+                this.cells.push(cell);
+                this.logEvent(`${this.getTypeName(type)} adicionado ao sistema`);
+            }
+
+            addPathogen(type) {
+                const pathogen = {
+                    type: type,
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: (Math.random() - 0.5) * 3,
+                    size: this.getSize(type),
+                    color: this.getColor(type),
+                    health: type === 'hiv' ? 30 : 50,
+                    replication: 0,
+                    targetCell: null
+                };
+                this.cells.push(pathogen);
+                this.logEvent(`${this.getTypeName(type)} invasor detectado!`);
+            }
+
+            addAntibody() {
+                const antibody = {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    size: 3,
+                    color: '#00bcd4',
+                    target: null
+                };
+                this.antibodies.push(antibody);
+                this.logEvent('Anticorpos liberados!');
+            }
+
+            addSpecializedAntibody() {
+                const antibody = {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    size: 4,
+                    color: '#66bb6a',
+                    target: null,
+                    specialized: true,
+                    damage: 15 // Anticorpos especializados causam mais dano ao HIV
+                };
+                this.specializedAntibodies.push(antibody);
+            }
+
+            administerHIVVaccine() {
+                if (this.hivVaccineActive) {
+                    this.logEvent('💊 Reforço da vacina aplicado!');
+                } else {
+                    this.hivVaccineActive = true;
+                    this.logEvent('💉 VACINA CONTRA HIV APLICADA! Sistema imunológico preparado.');
+                }
+                
+                this.vaccineCooldown = 600; // 340 segundos de proteção máxima
+                this.immunityLevel = 100;
+                
+                // Protege todas as células T existentes
+                this.cells.forEach(cell => {
+                    if (cell.type === 'tcell') {
+                        cell.vaccinated = true;
+                        cell.color = '#4fc3f7'; // Azul mais forte para células protegidas
+                    }
+                });
+                
+                // Gera anticorpos especializados imediatamente
+                for (let i = 0; i < 5; i++) {
+                    this.addSpecializedAntibody();
+                }
+                
+                this.updateVaccineStatus();
+            }
+
+            getSize(type) {
+                const sizes = {
+                    'virus': 8,
+                    'bacteria': 12,
+                    'fungus': 15,
+                    'hiv': 6,
+                    'macrophage': 20,
+                    'tcell': 18,
+                    'bcell': 16
+                };
+                return sizes[type] || 10;
+            }
+
+            getColor(type) {
+                const colors = {
+                    'virus': '#ff5252',
+                    'bacteria': '#ff9800',
+                    'fungus': '#9c27b0',
+                    'hiv': '#8e24aa',
+                    'macrophage': '#4caf50',
+                    'tcell': '#2196f3',
+                    'bcell': '#ffeb3b'
+                };
+                return colors[type] || '#ffffff';
+            }
+
+            getAttack(type) {
+                const attacks = {
+                    'macrophage': 25,
+                    'tcell': 15,
+                    'bcell': 10
+                };
+                return attacks[type] || 0;
+            }
+
+            getTypeName(type) {
+                const names = {
+                    'virus': 'Vírus',
+                    'bacteria': 'Bactéria',
+                    'fungus': 'Fungo',
+                    'hiv': 'Vírus HIV',
+                    'macrophage': 'Macrófago',
+                    'tcell': 'Linfócito T',
+                    'bcell': 'Linfócito B'
+                };
+                return names[type] || 'Célula';
+            }
+
+            update() {
+                if (!this.running) return;
+
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Atualiza vacina
+                this.updateVaccine();
+
+                // Atualiza células
+                for (let i = this.cells.length - 1; i >= 0; i--) {
+                    const cell = this.cells[i];
+                    
+                    // Movimento
+                    cell.x += cell.vx;
+                    cell.y += cell.vy;
+
+                    // Limites
+                    if (cell.x < 0 || cell.x > this.canvas.width) cell.vx *= -1;
+                    if (cell.y < 0 || cell.y > this.canvas.height) cell.vy *= -1;
+
+                    // Comportamento específico
+                    if (['virus', 'bacteria', 'fungus', 'hiv'].includes(cell.type)) {
+                        this.updatePathogen(cell, i);
+                    } else {
+                        this.updateDefense(cell, i);
+                    }
+
+                    // Desenha célula
+                    this.drawCell(cell);
+                }
+
+                // Atualiza anticorpos
+                this.updateAntibodies();
+                this.updateSpecializedAntibodies();
+
+                this.updateStats();
+                this.updateHealth();
+            }
+
+            updateVaccine() {
+                if (this.hivVaccineActive && this.vaccineCooldown > 0) {
+                    this.vaccineCooldown--;
+                    this.immunityLevel = (this.vaccineCooldown / 600) * 100;
+                    
+                    // Gera anticorpos especializados periodicamente
+                    if (Math.random() < 0.02) {
+                        this.addSpecializedAntibody();
+                    }
+                    
+                    if (this.vaccineCooldown === 0) {
+                        this.hivVaccineActive = false;
+                        this.logEvent('⚠️ Proteção da vacina está diminuindo...');
+                        this.updateVaccineStatus();
+                    }
+                }
+            }
+
+            updatePathogen(pathogen, index) {
+                // Comportamento específico do HIV
+                if (pathogen.type === 'hiv') {
+                    this.updateHIV(pathogen, index);
+                    return;
+                }
+
+                // Replicação para outros patógenos
+                pathogen.replication++;
+                if (pathogen.replication > 300) {
+                    pathogen.replication = 0;
+                    this.addPathogen(pathogen.type);
+                }
+
+                // Verifica colisão com células de defesa
+                for (let j = 0; j < this.cells.length; j++) {
+                    const defender = this.cells[j];
+                    if (['macrophage', 'tcell', 'bcell'].includes(defender.type)) {
+                        const dx = pathogen.x - defender.x;
+                        const dy = pathogen.y - defender.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < pathogen.size + defender.size) {
+                            pathogen.health -= defender.attack;
+                            defender.cooldown = 30;
+
+                            if (pathogen.health <= 0) {
+                                this.cells.splice(index, 1);
+                                this.logEvent(`${this.getTypeName(pathogen.type)} eliminado!`);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            updateHIV(hiv, index) {
+                // Comportamento do HIV - procura especificamente por linfócitos T
+                if (!hiv.targetCell) {
+                    // Encontra o linfócito T mais próximo
+                    let closestTCell = null;
+                    let closestDistance = 150;
+
+                    for (let j = 0; j < this.cells.length; j++) {
+                        const cell = this.cells[j];
+                        if (cell.type === 'tcell' && !cell.infected) {
+                            const dx = cell.x - hiv.x;
+                            const dy = cell.y - hiv.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestTCell = cell;
+                            }
+                        }
+                    }
+
+                    hiv.targetCell = closestTCell;
+                }
+
+                // Move em direção ao linfócito T alvo
+                if (hiv.targetCell) {
+                    const dx = hiv.targetCell.x - hiv.x;
+                    const dy = hiv.targetCell.y - hiv.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 200) {
+                        hiv.vx = (dx / distance) * 3;
+                        hiv.vy = (dy / distance) * 3;
+                    }
+
+                    // Tenta infectar o linfócito T
+                    if (distance < hiv.size + hiv.targetCell.size) {
+                        // Células vacinadas são resistentes ao HIV
+                        if (hiv.targetCell.vaccinated) {
+                            hiv.health -= 20; // HIV sofre dano ao tentar infectar célula protegida
+                            this.logEvent('🛡️ Célula T vacinada resistiu ao HIV!');
+                        } else {
+                            hiv.targetCell.infected = true;
+                            hiv.targetCell.color = '#8e24aa';
+                            hiv.targetCell.health -= 2;
+                            
+                            this.cells.splice(index, 1);
+                            this.logEvent('⚠️ ALERTA: Linfócito T infectado pelo HIV!');
+                            
+                            if (Math.random() < 0.3) {
+                                this.addPathogen('hiv');
+                            }
+                        }
+                    }
+                }
+
+                // Replicação do HIV
+                hiv.replication++;
+                if (hiv.replication > 500) {
+                    hiv.replication = 0;
+                    this.addPathogen('hiv');
+                }
+            }
+
+            updateDefense(defender, index) {
+                if (defender.cooldown > 0) {
+                    defender.cooldown--;
+                }
+
+                // Células infectadas não atacam
+                if (defender.infected) {
+                    if (Math.random() < 0.02) {
+                        defender.vx = (Math.random() - 0.5) * 2;
+                        defender.vy = (Math.random() - 0.5) * 2;
+                    }
+                    return;
+                }
+
+                // Procura patógenos próximos
+                let closestPathogen = null;
+                let closestDistance = 100;
+
+                for (let j = 0; j < this.cells.length; j++) {
+                    const pathogen = this.cells[j];
+                    if (['virus', 'bacteria', 'fungus', 'hiv'].includes(pathogen.type)) {
+                        const dx = pathogen.x - defender.x;
+                        const dy = pathogen.y - defender.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestPathogen = pathogen;
+                        }
+                    }
+                }
+
+                if (closestPathogen && defender.cooldown === 0) {
+                    const dx = closestPathogen.x - defender.x;
+                    const dy = closestPathogen.y - defender.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    defender.vx = (dx / distance) * 2;
+                    defender.vy = (dy / distance) * 2;
+                }
+            }
+
+            updateAntibodies() {
+                for (let i = this.antibodies.length - 1; i >= 0; i--) {
+                    const antibody = this.antibodies[i];
+                    
+                    antibody.x += antibody.vx;
+                    antibody.y += antibody.vy;
+
+                    if (antibody.x < 0 || antibody.x > this.canvas.width) antibody.vx *= -1;
+                    if (antibody.y < 0 || antibody.y > this.canvas.height) antibody.vy *= -1;
+
+                    for (let j = 0; j < this.cells.length; j++) {
+                        const pathogen = this.cells[j];
+                        if (['virus', 'bacteria', 'fungus'].includes(pathogen.type)) {
+                            const dx = pathogen.x - antibody.x;
+                            const dy = pathogen.y - antibody.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            if (distance < pathogen.size + antibody.size) {
+                                pathogen.health -= 5;
+                                this.antibodies.splice(i, 1);
+                                break;
+                            }
+                        }
+                    }
+
+                    this.ctx.fillStyle = antibody.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(antibody.x, antibody.y, antibody.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            updateSpecializedAntibodies() {
+                for (let i = this.specializedAntibodies.length - 1; i >= 0; i--) {
+                    const antibody = this.specializedAntibodies[i];
+                    
+                    antibody.x += antibody.vx;
+                    antibody.y += antibody.vy;
+
+                    if (antibody.x < 0 || antibody.x > this.canvas.width) antibody.vx *= -1;
+                    if (antibody.y < 0 || antibody.y > this.canvas.height) antibody.vy *= -1;
+
+                    // Anticorpos especializados procuram especificamente por HIV
+                    let closestHIV = null;
+                    let closestDistance = 100;
+
+                    for (let j = 0; j < this.cells.length; j++) {
+                        const pathogen = this.cells[j];
+                        if (pathogen.type === 'hiv') {
+                            const dx = pathogen.x - antibody.x;
+                            const dy = pathogen.y - antibody.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestHIV = pathogen;
+                            }
+                        }
+                    }
+
+                    // Move em direção ao HIV mais próximo
+                    if (closestHIV) {
+                        const dx = closestHIV.x - antibody.x;
+                        const dy = closestHIV.y - antibody.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        antibody.vx = (dx / distance) * 5;
+                        antibody.vy = (dy / distance) * 5;
+
+                        // Neutraliza o HIV
+                        if (distance < closestHIV.size + antibody.size) {
+                            closestHIV.health -= antibody.damage;
+                            this.specializedAntibodies.splice(i, 1);
+                            
+                            if (closestHIV.health <= 0) {
+                                this.cells.splice(this.cells.indexOf(closestHIV), 1);
+                                this.logEvent('✅ HIV neutralizado por anticorpos especializados!');
+                            }
+                            break;
+                        }
+                    }
+
+                    // Desenha anticorpo especializado
+                    this.ctx.fillStyle = antibody.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(antibody.x, antibody.y, antibody.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    // Efeito visual especial
+                    this.ctx.strokeStyle = '#66bb6a';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.beginPath();
+                    this.ctx.arc(antibody.x, antibody.y, antibody.size + 2, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
+            }
+
+            drawCell(cell) {
+                this.ctx.fillStyle = cell.color;
+                this.ctx.beginPath();
+                this.ctx.arc(cell.x, cell.y, cell.size, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                if (cell.cooldown > 0) {
+                    this.ctx.strokeStyle = '#ffffff';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(cell.x, cell.y, cell.size + 3, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
+
+                if (cell.infected) {
+                    this.ctx.strokeStyle = '#ff0000';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(cell.x, cell.y, cell.size + 5, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
+
+                // Indicador de célula vacinada
+                if (cell.vaccinated) {
+                    this.ctx.strokeStyle = '#4fc3f7';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(cell.x, cell.y, cell.size + 7, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
+            }
+
+            updateStats() {
+                const pathogens = this.cells.filter(cell => 
+                    ['virus', 'bacteria', 'fungus', 'hiv'].includes(cell.type)
+                ).length;
+                
+                const defenses = this.cells.filter(cell => 
+                    ['macrophage', 'tcell', 'bcell'].includes(cell.type)
+                ).length;
+
+                document.getElementById('pathogenCount').textContent = pathogens;
+                document.getElementById('defenseCount').textContent = defenses;
+                document.getElementById('immunityLevel').textContent = `${Math.round(this.immunityLevel)}%`;
+            }
+
+            updateVaccineStatus() {
+                const statusElement = document.getElementById('vaccineStatus');
+                if (this.hivVaccineActive) {
+                    statusElement.innerHTML = 'Status: <span class="vaccine-active">✅ Protegido</span>';
+                } else {
+                    statusElement.innerHTML = 'Status: <span class="vaccine-inactive">❌ Não vacinado</span>';
+                }
+            }
+
+            updateHealth() {
+                const pathogens = this.cells.filter(cell => 
+                    ['virus', 'bacteria', 'fungus', 'hiv'].includes(cell.type)
+                ).length;
+
+                const infectedCells = this.cells.filter(cell => 
+                    cell.infected
+                ).length;
+
+                // Bonus de saúde quando vacinado
+                const vaccineBonus = this.hivVaccineActive ? 20 : 0;
+                this.health = Math.max(0, 100 + vaccineBonus - pathogens * 3 - infectedCells * 8);
+                document.getElementById('health').textContent = `${Math.min(100, this.health)}%`;
+
+                if (this.health <= 0) {
+                    this.running = false;
+                    this.logEvent('⚠️ SISTEMA IMUNOLÓGICO SOBRECARREGADO! Saúde crítica!');
+                }
+
+                if (infectedCells > 2) {
+                    this.logEvent('🚨 ALERTA: Múltiplas células de defesa infectadas!');
+                }
+            }
+
+            logEvent(message) {
+                const log = document.getElementById('eventLog');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                log.appendChild(entry);
+                
+                while (log.children.length > 20) {
+                    log.removeChild(log.firstChild);
+                }
+                
+                log.scrollTop = log.scrollHeight;
+            }
+
+            start() {
+                this.running = true;
+                this.logEvent('Simulação iniciada! Sistema imunológico ativo.');
+            }
+
+            pause() {
+                this.running = false;
+                this.logEvent('Simulação pausada.');
+            }
+
+            reset() {
+                this.cells = [];
+                this.antibodies = [];
+                this.specializedAntibodies = [];
+                this.health = 100;
+                this.hivVaccineActive = false;
+                this.immunityLevel = 0;
+                this.vaccineCooldown = 0;
+                this.running = false;
+                this.init();
+                document.getElementById('eventLog').innerHTML = 
+                    '<div class="log-entry">Sistema reinicializado. Pronto para nova simulação.</div>';
+            }
+        }
+
+        // Instância global da simulação
+        let simulation = new Simulation();
+
+        // Funções de controle
+        function startSimulation() {
+            simulation.start();
+        }
+
+        function pauseSimulation() {
+            simulation.pause();
+        }
+
+        function resetSimulation() {
+            simulation.reset();
+        }
+
+        function addVirus() {
+            simulation.addPathogen('virus');
+        }
+
+        function addBacteria() {
+            simulation.addPathogen('bacteria');
+        }
+
+        function addFungus() {
+            simulation.addPathogen('fungus');
+        }
+
+        function addHIV() {
+            simulation.addPathogen('hiv');
+        }
+
+        function addMacrophage() {
+            simulation.addCell('macrophage');
+        }
+
+        function addTCell() {
+            simulation.addCell('tcell');
+        }
+
+        function addBCell() {
+            simulation.addCell('bcell');
+        }
+
+        function addAntibody() {
+            simulation.addAntibody();
+        }
+
+        function administerHIVVaccine() {
+            simulation.administerHIVVaccine();
+        }
+
+        // Loop de animação
+        function animate() {
+            simulation.update();
+            requestAnimationFrame(animate);
+        }
+
+        // Inicia a animação
+        animate();
+    </script>
+</body>
+</html>
